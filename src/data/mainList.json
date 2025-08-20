@@ -1,0 +1,32 @@
+[
+  {
+    "id": 1,
+    "category": "Food",
+    "subcategories": ["Groceries", "Restaurants", "Fast Food"],
+    "icon": "🍔"
+  },
+  {
+    "id": 2,
+    "category": "Transportation",
+    "subcategories": ["Fuel", "Public Transport", "Taxi/Uber"],
+    "icon": "🚗"
+  },
+  {
+    "id": 3,
+    "category": "Entertainment",
+    "subcategories": ["Movies", "Games", "Books"],
+    "icon": "🎬"
+  },
+  {
+    "id": 4,
+    "category": "Shopping",
+    "subcategories": ["Clothes", "Electronics", "Home Items"],
+    "icon": "🛍️"
+  },
+  {
+    "id": 5,
+    "category": "Bills",
+    "subcategories": ["Electricity", "Internet", "Phone"],
+    "icon": "💡"
+  }
+]
