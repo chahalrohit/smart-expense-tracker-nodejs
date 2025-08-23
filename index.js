@@ -81,6 +81,7 @@ try {
 }
 
 /** MongoDB Connection with retry logic */
+/** MongoDB Connection with retry logic */
 const connectToMongoDB = async (retries = 5) => {
   try {
     const mongoUri = process.env.MONGO_URI;
@@ -88,14 +89,16 @@ const connectToMongoDB = async (retries = 5) => {
       throw new Error("MONGO_URI environment variable is not set");
     }
 
+    // Optional: disable buffering globally
+    // mongoose.set('bufferCommands', false);
+
     await mongoose.connect(mongoUri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      maxPoolSize: 10, // Maintain up to 10 socket connections
-      serverSelectionTimeoutMS: 5000, // Keep trying to send operations for 5 seconds
-      socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
-      bufferMaxEntries: 0, // Disable mongoose buffering
-      bufferCommands: false, // Disable mongoose buffering
+      maxPoolSize: 10, // connection pool size
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+      bufferCommands: false, // disable mongoose buffering
+      // Do NOT include bufferMaxEntries (deprecated/removed)
+      // Do NOT include useNewUrlParser / useUnifiedTopology in Mongoose 6+
     });
 
     console.log("✅ MongoDB connected successfully");
@@ -110,7 +113,6 @@ const connectToMongoDB = async (retries = 5) => {
       setTimeout(() => connectToMongoDB(retries - 1), 5000);
     } else {
       console.error("❌ Failed to connect to MongoDB after multiple retries");
-      // Don't exit in production, let the app run without DB for health checks
       if (process.env.NODE_ENV !== "production") {
         process.exit(1);
       }
