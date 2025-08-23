@@ -163,28 +163,46 @@ app.use((error, req, res, next) => {
 });
 
 /** Graceful shutdown handling */
-const gracefulShutdown = (signal) => {
+/** Graceful shutdown handling (Mongoose 7/8 safe) */
+const gracefulShutdown = async (signal) => {
   console.log(`\n⚠️  Received ${signal}. Starting graceful shutdown...`);
-
-  server.close((err) => {
-    if (err) {
-      console.error("❌ Error during server shutdown:", err);
-      return process.exit(1);
+  try {
+    // 1) Stop accepting new HTTP connections
+    if (server && server.listening) {
+      await new Promise((resolve, reject) =>
+        server.close((err) => (err ? reject(err) : resolve()))
+      );
+      console.log("✅ HTTP server closed");
     }
 
-    console.log("✅ HTTP server closed");
-
-    mongoose.connection.close(false, () => {
+    // 2) Close Mongo connections (no callback in Mongoose 7/8)
+    if (mongoose.connection.readyState !== 0) {
+      await mongoose.connection.close(false); // don't force close; let ops finish
+      // or: await mongoose.disconnect();
       console.log("✅ MongoDB connection closed");
-      console.log("👋 Graceful shutdown completed");
-      process.exit(0);
-    });
-  });
+    }
+
+    console.log("👋 Graceful shutdown completed");
+    process.exit(0);
+  } catch (err) {
+    console.error("❌ Error during server shutdown:", err);
+    process.exit(1);
+  }
 };
 
-// Handle graceful shutdown
-process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
-process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+// Signals
+["SIGTERM", "SIGINT"].forEach((sig) =>
+  process.on(sig, () => gracefulShutdown(sig))
+);
+
+// Optional: don't kill the process immediately on unhandled rejections during shutdown
+process.on("unhandledRejection", (err) => {
+  console.error("❌ Unhandled Rejection:", err);
+});
+process.on("uncaughtException", (err) => {
+  console.error("❌ Uncaught Exception:", err);
+  process.exit(1);
+});
 
 // Handle uncaught exceptions
 process.on("uncaughtException", (err) => {
